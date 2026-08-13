@@ -1,8 +1,8 @@
 <!-- components/table/BodyRow.vue -->
 <template>
     <tr class="vdt-tbody-tr" :class="[
-        { 'bg-vdt-surface': alternating && index % 2 === 0 },
-        { 'bg-vdt-surface-secondary': !alternating || index % 2 === 1 },
+        { 'bg-vdt-surface': !alternating || index % 2 === 0 },
+        { 'bg-vdt-surface-secondary': alternating && index % 2 === 1 },
         { 'hover:bg-vdt-interactive-hover': !noHover },
         { 'vdt-tbody-tr--border-cell': borderCell },
         { 'vdt-tbody-tr--border-row': borderRow },

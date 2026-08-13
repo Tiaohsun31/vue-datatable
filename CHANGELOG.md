@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.3] - 2026-08-13
+
+### Bug Fixes
+
+- 修復 `alternating={false}`（關閉交替列底色）時，**每一列都套用次要表面色**（`bg-vdt-surface-secondary`）而整個表身呈現灰底的問題。原因：條件式 class 的 `!alternating ||` 落在次要色那一支，關閉交替色等同「全部使用斑馬紋的深色那一色」。修正為關閉時全部使用基底色 `bg-vdt-surface`（仍保留明確底色，固定列的 `background-color: inherit` 才不會變透明而在橫向捲動時透出內容）。
+
 ## [3.0.2] - 2026-06-16
 
 ### Bug Fixes

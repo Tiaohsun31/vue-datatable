@@ -1,7 +1,7 @@
 {
   "name": "@tiaohsun/vue-datatable",
   "author": "tiaohsun",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "A self-contained Vue 3 data table (Tailwind 4-styled, no Tailwind install required) with dark mode, i18n, sorting and selection.",
   "license": "MIT",
   "type": "module",
