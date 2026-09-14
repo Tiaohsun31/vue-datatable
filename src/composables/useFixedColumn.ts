@@ -5,7 +5,7 @@
     處理固定列的寬度
 
  */
-import { type Ref, computed, onMounted, onUnmounted, ref } from 'vue';
+import { type Ref, computed } from 'vue';
 import type { HeaderForRender } from '../types/internal';
 
 type FixedColumnsInfo = {
@@ -18,11 +18,10 @@ type FixedColumnsInfo = {
 
 export interface UseFixedColumnOptions {
     headersForRender: Ref<HeaderForRender[]>;
-    tableContainerRef: Ref<HTMLElement | null>;
 }
 
 export default function useFixedColumn(options: UseFixedColumnOptions) {
-    const { headersForRender, tableContainerRef } = options;
+    const { headersForRender } = options;
     // 篩選出設置了 fixed: true 的列
     const fixedHeaders = computed((): HeaderForRender[] => headersForRender.value.filter((header) => header.fixed));
 
@@ -83,36 +82,7 @@ export default function useFixedColumn(options: UseFixedColumnOptions) {
     });
 
 
-    const showShadow = ref(false);
-    let cleanup: (() => void) | null = null;
-
-    onMounted(() => {
-        const element = tableContainerRef.value;
-        if (element) {
-            const handleScroll = () => {
-                showShadow.value = element.scrollLeft > 0;
-            };
-
-            // 初始檢查
-            handleScroll();
-
-            // 添加事件監聽
-            element.addEventListener('scroll', handleScroll);
-
-            // 保存清理函數
-            cleanup = () => {
-                element.removeEventListener('scroll', handleScroll);
-            };
-        }
-    });
-
-    // 組件卸載時清理
-    onUnmounted(() => {
-        if (cleanup) {
-            cleanup();
-            cleanup = null;
-        }
-    });
+    // 陰影旗標（左右分開計算）由 useHorizontalScroll 依容器捲動狀態提供
 
     return {
         fixedHeaders,
@@ -123,6 +93,5 @@ export default function useFixedColumn(options: UseFixedColumnOptions) {
         firstRightFixedColumn,
 
         fixedColumnsInfos,
-        showShadow,
     };
 }

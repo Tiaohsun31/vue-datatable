@@ -17,6 +17,11 @@ export interface DataTableLocale {
     rowsPerPageMessage: string
     /** 分頁資訊分隔字（如 "1–5 of 12" 中的 of） */
     rowsOfPageSeparatorMessage: string
+    /**
+     * 表格水平溢出時的提示文字（showScrollHint 啟用時顯示）。
+     * 選填以維持向後相容：自訂語系未提供時退回內建 en 字串。
+     */
+    horizontalScrollHint?: string
 }
 
 // 表頭欄位定義
@@ -32,6 +37,7 @@ export interface Header {
 
 // 表格數據
 export interface Item {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 公開 API：使用者資料可為任意結構，改 unknown 屬破壞性變更
     [key: string]: any           // 允許任意鍵值對
     /** 可選的唯一識別；未設定 itemKey prop 時，內部 getItemKey 會優先採用此欄位 */
     key?: string | number
@@ -72,7 +78,9 @@ export interface ArrayFilterOption {
 // 自定義過濾選項
 export interface CustomFilterOption {
     field: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 公開 API：自訂比較函式的值型別由使用者決定
     comparison: (value: any, criteria: any) => boolean
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 同上
     criteria: any
 }
 
@@ -80,6 +88,7 @@ export interface CustomFilterOption {
 export interface SimpleFilterOption {
     field: string;
     comparison: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 公開 API：保留寬鬆型別（見 ROADMAP「收緊 SimpleFilterOption」）
     criteria: any;
 }
 
@@ -126,6 +135,9 @@ export interface DataTableInstance {
     rowsPerPageOptions: number[]   // 每頁筆數選項
     rowsPerPageActiveOption: number // 當前每頁筆數
     updateRowsPerPageActiveOption: (option: number) => void // 更新每頁筆數
+
+    // 水平捲動
+    readonly hasHorizontalOverflow: boolean // 表格內容是否比容器寬（唯讀）
 }
 
 // 組件Props類型
@@ -274,6 +286,15 @@ export interface DataTableProps {
     expandColumn?: string;
     /** 是否啟用展開過渡效果 */
     expandTransition?: boolean
+
+    // 水平捲動 / 無障礙
+    /**
+     * 捲動區域的無障礙名稱。有傳入且表格水平溢出時，容器加上
+     * tabindex="0"、role="region"、aria-label，讓鍵盤使用者可聚焦後用方向鍵捲動。
+     */
+    scrollRegionLabel?: string
+    /** 表格水平溢出時，在表格上方顯示提示列（文字來自 locale 的 horizontalScrollHint，或 scroll-hint slot） */
+    showScrollHint?: boolean
 }
 
 export type ClickRowArgument = Item & {

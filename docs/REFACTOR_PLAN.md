@@ -70,6 +70,34 @@
 - 解析序：個別 message prop > `localeOverrides` > 內建 `locale` 包。透過 inject 提供，順帶消除 `rowsPerPageMessage`/`rowsOfPageSeparatorMessage` 的 prop-drilling。
 - 併入 Phase 1（template 已全開，避免二次改動）；見 Phase 1.5。
 
+### 決策 9（3.1.0 追記）：重新引入水平溢出偵測 — 有實際使用者，改為正式 API
+> v3.0.0 之後的追加決策。Phase 0（見下方「死碼 / 殘留清理」）曾刪除舊的 `hasHorizontalScroll`；本決策說明為何重新引入、以及與舊實作的差異。
+
+**為什麼當初刪、現在又加回來**
+- 當初刪除的理由是「沒有使用者」：`hasHorizontalScroll` 唯一讀取點在註解碼，整段含 `MutationObserver` 的偵測是空轉，且 `onUnmounted` 還誤寫成 `addEventListener`（監聽器洩漏）。
+- 現在有實際使用者：eShop CMS 的 7 個列表頁在 1024px 寬度時表格水平溢出，最右側操作欄被捲到畫面外。使用端自寫 `useTableScrollRegion`，以 `querySelector('.vdt-table-container')` 抓**套件內部 class** 比對 `scrollWidth` / `clientWidth`，再讓外層 div 可聚焦並攔截方向鍵 `scrollBy`。依賴內部 DOM 結構是脆弱的耦合，應由套件提供正式、可測試的 API。
+
+**與舊實作的差異**
+
+| 面向 | 舊 `hasHorizontalScroll`（≤ 2.3.2，已刪） | 新 `hasHorizontalOverflow`（3.1.0） |
+| --- | --- | --- |
+| 觸發來源 | `MutationObserver`（任何 DOM 變動）+ `window` resize | `ResizeObserver` 觀察**容器與 `<table>`** + 容器 scroll + items / headers / 分頁變動後 `nextTick`；不用 `MutationObserver`（變動過於頻繁且與尺寸無直接關係） |
+| 對外 | 無（讀取點在註解碼） | `defineExpose` 唯讀 ref + `update:hasHorizontalOverflow` 事件 + `scrollRegionLabel` / `showScrollHint` / `scroll-hint` slot |
+| 可及性 | 無 | 溢出時才加 `tabindex="0"` / `role="region"` / `aria-label`（未溢出不加，避免多餘 Tab 停留點）、`aria-describedby` 提示列、`:focus-visible` 外框 |
+| 陰影 | 左右共用 `scrollLeft > 0`（右側時機錯） | 左 `scrollLeft > 0`、右 `scrollLeft + clientWidth < scrollWidth - 1`，scroll 與 resize 都重算 |
+| 清理 / 環境 | `removeEventListener` 寫錯 | `onUnmounted` 統一 `disconnect` / 移除監聽；SSR 不執行、無 `ResizeObserver` 退回 `window` resize |
+| 位置 | 散在 `DataTable.vue` | 獨立 `composables/useHorizontalScroll.ts`（溢出與固定欄無關，沒有固定欄也需要）；`useFixedColumn` 回歸純位置計算，捲動監聽只保留一份 |
+
+**鍵盤：不攔截按鍵**
+- 實測（Chromium，CDP 送出帶 virtual key code 的真實按鍵，並以頁面 ArrowDown 捲動作為對照組）：焦點在捲動容器本身時，原生 ArrowLeft / ArrowRight 即可左右捲動（每次約 40px）；表格內輸入框的方向鍵只移動游標、可排序表頭 Enter 仍正常排序。故不自行處理 keydown。
+- 使用端舊寫法需要攔截，是因為聚焦的是**外層 div**（不是捲動元素本身），瀏覽器不會替它捲動內層容器。
+- Firefox 本機未安裝，未實測；若日後發現原生行為不足，再補「只處理 `event.target === 容器`」的 ArrowLeft / ArrowRight。
+
+**其他取捨**
+- `DataTableLocale.horizontalScrollHint` 設為選填：設必填會讓自行建立完整 `DataTableLocale` 物件的使用端在升級後型別檢查失敗（型別層破壞性變更）。
+- `.vdt-table-wrapper` 改直向 flex：才能在固定高度 flex 版面中讓容器吃剩餘高度並自行捲動。未限制高度時與 block 排版結果相同（playground 於 1280px / 768px 量測 wrapper / container / footer 尺寸一致）。
+- 提示列 id 以模組層計數器產生（不用 `useId`，維持 `vue ^3.4` peer）；只在掛載後溢出時渲染，SSR 無 hydration 不一致。
+
 ---
 
 ## 2. 分階段任務（低風險優先）
@@ -95,7 +123,7 @@
 - [ ] `src/composables/useTotalItems.ts:10` — 未使用的 `BATCH_SELECTION_THRESHOLD` 常數。
 - [ ] `src/composables/useTotalItems.ts:192` — `shouldUseBatchSelection` 內 `isServerSideMode ? …` 前已 `return false` 的死分支。
 - [ ] `src/components/table/TableFooter.vue:111-134` — 未使用的 `rowsPerPageSlotProps`/`paginationInfoSlotProps`/`paginationSlotProps` computed。
-- [ ] `src/DataTable.vue:558-563,665-694` — `hasHorizontalScroll` 唯一讀取點在註解碼（:578），整個含 `MutationObserver` 的偵測是空轉，刪除（陰影改由 `useFixedColumn` 負責）。
+- [ ] `src/DataTable.vue:558-563,665-694` — `hasHorizontalScroll` 唯一讀取點在註解碼（:578），整個含 `MutationObserver` 的偵測是空轉，刪除（陰影改由 `useFixedColumn` 負責）。**→ 3.1.0 因有實際使用者而以 `ResizeObserver` 重新引入，見決策 9。**
 - [ ] 清掉大段註解碼：`src/types/main.ts:299-397`、`useTotalItems.ts:137-157,268-299`、`themeManager.ts:209-212` 等。
 - [ ] 刪除失效檔 `src/types/vue-datatable-tailwind.d.ts`（宣告模組名 `vue-datatable-tailwind` 與發佈名不符，相對路徑無法從消費端解析，無人引用）。
 - [ ] `src/index.ts:1` — import 路徑 `'../src/styles/theme.css'` 改 `'./styles/theme.css'`。

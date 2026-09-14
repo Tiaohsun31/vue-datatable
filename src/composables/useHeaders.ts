@@ -106,21 +106,21 @@ export default function useHeaders(options: UseHeadersOptions) {
             text: 'checkbox',
             value: 'checkbox',
             fixed: fixedCheckbox.value || computeFixedColumns.value.hasFixedColumns,
-            fixedPosition: 'left' as 'left',
+            fixedPosition: 'left' as const,
             width: checkboxColumnWidth.value ?? 36
         },
         index: showIndex.value && {
             text: showIndexSymbol.value,
             value: 'index',
             fixed: fixedIndex.value || computeFixedColumns.value.hasFixedColumns,
-            fixedPosition: 'left' as 'left',
+            fixedPosition: 'left' as const,
             width: indexColumnWidth.value
         },
         expand: ifHasExpandSlot.value && !expandColumn.value && {
             text: '',
             value: 'expand',
             fixed: fixedExpand.value || computeFixedColumns.value.hasFixedColumns,
-            fixedPosition: 'left' as 'left',
+            fixedPosition: 'left' as const,
             width: expandColumnWidth.value
         }
     }));

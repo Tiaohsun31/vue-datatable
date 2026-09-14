@@ -1,10 +1,20 @@
 <template>
     <div ref="tableWrapper" class="vdt-table-wrapper" :class="[wrapperClassName]"
         :style="themeStyle" v-bind="themeAttrs">
+        <!-- Horizontal Scroll Hint -->
+        <div v-if="isScrollHintVisible" :id="scrollHintId" class="vdt-scroll-hint">
+            <slot name="scroll-hint" v-bind="{ hasHorizontalOverflow }">
+                {{ messages.horizontalScrollHint ?? locales[defaultLocale].horizontalScrollHint }}
+            </slot>
+        </div>
+
         <!-- Main Table Container -->
-        <div ref="tableContainer" class="vdt-table-container"
-            :class="[{ 'vdt-table-container--shadow show-shadow': showShadow }, containerClassName]">
-            <table :id="tableNodeId" class="vdt-table" :class="[tableClassName]">
+        <div ref="tableContainer" class="vdt-table-container" :class="[{
+            'vdt-table-container--shadow show-shadow': showLeftShadow,
+            'vdt-table-container--shadow-left': showLeftShadow,
+            'vdt-table-container--shadow-right': showRightShadow,
+        }, containerClassName]" v-bind="scrollRegionAttrs">
+            <table ref="tableElement" :id="tableNodeId" class="vdt-table" :class="[tableClassName]">
                 <colgroup>
                     <col v-for="(header, index) in headersForRender" :key="index" :style="getColStyle(header)" />
                 </colgroup>
@@ -119,9 +129,14 @@
     </div>
 </template>
 
+<script lang="ts">
+// 模組層計數器：產生各實例唯一的提示列 id（不用 useId 以維持 vue ^3.4 peer 相容）
+let scrollHintIdCounter = 0;
+</script>
+
 <script setup lang="ts">
 import {
-    useSlots, computed, toRef, toRefs, ref, watch, provide
+    useSlots, computed, toRef, toRefs, ref, watch, provide, type Slot
 } from 'vue';
 
 import Loading from '../components/loadings/Loading.vue';
@@ -130,6 +145,7 @@ import useClickRow from '../composables/useClickRow';
 import useExpandableRow from '../composables/useExpandableRow';
 import useFixedColumn from '../composables/useFixedColumn';
 import useHeaders from '../composables/useHeaders';
+import useHorizontalScroll from '../composables/useHorizontalScroll';
 import usePageItems from '../composables/usePageItems';
 import usePagination from '../composables/usePagination';
 import useRows from '../composables/useRows';
@@ -137,7 +153,7 @@ import useServerOptions from '../composables/useServerOptions';
 import useTotalItems from '../composables/useTotalItems';
 
 import type { Header, Item, DataTableProps, DataTableLocale } from '../types/public';
-import type { HeaderForRender, ClickEventType, DataTableEmits } from '../types/internal';
+import type { HeaderForRender, DataTableEmits } from '../types/internal';
 import type { DataTableSlots } from '../types/slot';
 import { locales, defaultLocale } from '../i18n';
 import { dataTableKey } from '../keys';
@@ -205,6 +221,7 @@ const props = withDefaults(defineProps<DataTableProps>(), {
     preventContextMenuRow: false,
     expandColumn: '',
     expandTransition: undefined,
+    showScrollHint: false,
 
     theme: () => 'indigo',
     searchType: 'contains',
@@ -254,7 +271,7 @@ const slots = useSlots();
 const ifHasExpandSlot = computed(() => !!slots.expand);
 const ifHasBodySlot = computed(() => !!slots.body);
 const footerSlotNames = computed(() => {
-    const footerSlots: Record<string, any> = {};
+    const footerSlots: Record<string, Slot | undefined> = {};
     ['rows-per-page', 'pagination-info', 'pagination'].forEach(name => {
         if (slots[name]) {
             footerSlots[name] = slots[name];
@@ -277,6 +294,7 @@ const shouldEnableTransition = computed(() =>
 // global dataTable $ref
 const tableWrapper = ref<HTMLDivElement | null>(null);
 const tableContainer = ref<HTMLDivElement | null>(null);
+const tableElement = ref<HTMLTableElement | null>(null);
 provide(dataTableKey, tableWrapper);
 
 const emits = defineEmits<DataTableEmits>();
@@ -343,7 +361,7 @@ const tableFooterProps = computed(() => ({
     hideRowsPerPage: props.hideRowsPerPage,
     hidePaginationInfo: props.hidePaginationInfo,
     buttonsPagination: props.buttonsPagination,
-    showShadow: showShadow.value,
+    showShadow: showLeftShadow.value,
     footerClassName: props.footerClassName,
     mobileFooterClasses: props.mobileFooterClasses,
     desktopFooterClasses: props.desktopFooterClasses,
@@ -493,16 +511,36 @@ const {
 
 const {
     fixedHeaders,
-    leftFixedHeaders,
-    rightFixedHeaders,
     lastLeftFixedColumn,
     firstRightFixedColumn,
     fixedColumnsInfos,
-    showShadow
 } = useFixedColumn({
     headersForRender,
-    tableContainerRef: tableContainer,
 });
+
+// 水平溢出偵測 + 左右固定欄陰影旗標
+const {
+    hasHorizontalOverflow,
+    showLeftShadow,
+    showRightShadow,
+} = useHorizontalScroll({
+    containerRef: tableContainer,
+    tableRef: tableElement,
+    watchSources: [pageItems, headersForRender],
+    onOverflowChange: (value) => emits('update:hasHorizontalOverflow', value),
+});
+
+// 提示列 id 在 setup 產生、只在掛載後溢出時才渲染，SSR 不會有 hydration 不一致
+const scrollHintId = `vdt-scroll-hint-${++scrollHintIdCounter}`;
+const isScrollHintVisible = computed(() => props.showScrollHint && hasHorizontalOverflow.value);
+
+// 只在真的可捲動時才成為可聚焦的 region，避免多一個沒用的 Tab 停留點
+const scrollRegionAttrs = computed(() => ({
+    ...(props.scrollRegionLabel && hasHorizontalOverflow.value
+        ? { tabindex: 0, role: 'region', 'aria-label': props.scrollRegionLabel }
+        : {}),
+    ...(isScrollHintVisible.value ? { 'aria-describedby': scrollHintId } : {}),
+}));
 
 // template style generation function
 const getColStyle = (header: HeaderForRender): string | undefined => {
@@ -635,6 +673,7 @@ defineExpose({
     rowsPerPageOptions: rowsItemsComputed,
     rowsPerPageActiveOption: rowsPerPageRef,
     updateRowsPerPageActiveOption: updateRowsPerPage,
+    hasHorizontalOverflow,
 });
 
 </script>

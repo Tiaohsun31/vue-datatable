@@ -183,3 +183,21 @@ Customize the empty state message.
   <div>No data available</div>
 </template>
 ```
+
+### `scroll-hint`
+
+_Since 3.1.0._ Customize the hint bar shown above the table while it overflows horizontally.
+
+The bar is rendered only when `show-scroll-hint` is enabled **and** the table actually overflows. Your content is placed inside the `.vdt-scroll-hint` element, which keeps its `id`, so the scroll container's `aria-describedby` still points at it.
+
+Slot props: `{ hasHorizontalOverflow: boolean }`.
+
+```vue
+<DataTable show-scroll-hint scroll-region-label="Products" :headers="headers" :items="items">
+  <template #scroll-hint="{ hasHorizontalOverflow }">
+    <span v-if="hasHorizontalOverflow">← Swipe or use the arrow keys to see more columns →</span>
+  </template>
+</DataTable>
+```
+
+To only change the text, prefer `:locale-overrides="{ horizontalScrollHint: '…' }"` (see [i18n](./i18n.md)).

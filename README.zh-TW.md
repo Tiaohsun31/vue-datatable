@@ -161,6 +161,49 @@ const bodyRowClassNameFunction: BodyRowClassNameFunction = (
 | clickRowToSelect | false        | boolean                                                               | false       | 點擊列，是否選擇項目。                                                              |
 | disabledRows     | false        | BodyRowDisabledFunction = (item: Item, rowNumber?: number) => boolean | —           | 禁止特定行被選取。                                                                  |
 | expandTransition | false        | boolean                                                               | true        | 如果有設置擴展列，預設啟用擴展列過渡效果。                                          |
+| scrollRegionLabel | false       | string                                                                | —           | _3.1.0_ 捲動區域的無障礙名稱。有傳入**且**表格水平溢出時，容器加上 `tabindex="0"`、`role="region"`、`aria-label`。 |
+| showScrollHint   | false        | boolean                                                               | false       | _3.1.0_ 表格水平溢出時在上方顯示提示列（文字來自 `locale.horizontalScrollHint` 或 `scroll-hint` slot）。 |
+
+## 水平溢出與無障礙
+
+_3.1.0 起提供，全部 opt-in。_ 表格以 `ResizeObserver` 同時觀察容器與 `<table>`，量測內容是否比容器寬（`scrollWidth - clientWidth > 1`），items / headers / 分頁變動後也會重量。沒有 `ResizeObserver`（或 SSR）時安全降級。
+
+```vue
+<DataTable
+  ref="table"
+  :headers="headers"
+  :items="items"
+  scroll-region-label="商品清單"
+  show-scroll-hint
+  locale="zh-TW"
+  @update:has-horizontal-overflow="(value) => (overflowing = value)"
+/>
+```
+
+- **`scrollRegionLabel`**：溢出時 `.vdt-table-container` 成為可聚焦、有名稱的 `role="region"`，鍵盤使用者可用 Tab 聚焦後以方向鍵左右捲動；沒有溢出時不加 `tabindex`，避免多一個沒用的 Tab 停留點。`:focus-visible` 外框使用 `--color-vdt-primary`。
+- **`showScrollHint`**：溢出時在表格上方渲染 `.vdt-scroll-hint`，並以 `aria-describedby` 連到容器。文字可用 `localeOverrides.horizontalScrollHint` 覆寫，或以 [`scroll-hint`](./docs/api/slot.md#scroll-hint) slot 完全自訂。
+- **`hasHorizontalOverflow`**：唯讀，透過元件實例取得（`table.value.hasHorizontalOverflow`）。變動時也會 emit `update:hasHorizontalOverflow`，請用 `@update:has-horizontal-overflow` 監聽（沒有對應 prop，不要用 `v-model`）。
+- **固定欄陰影**：右側固定欄的陰影改為「右邊還有未顯示內容」時出現；左側固定欄維持「已離開最左側」時出現。捲動與尺寸變動時都會重算。新增 class hook：`.vdt-table-container--shadow-left` / `--shadow-right`。
+
+使用端原本以 `querySelector('.vdt-table-container')` 自行量測溢出、讓外層 div 可聚焦並攔截方向鍵的寫法，可改為上述 props，不再依賴套件內部 DOM。
+
+### 放在固定高度 flex 版面中
+
+根元素 `.vdt-table-wrapper` 為直向 flex。讓表格吃掉 flex 欄位剩餘高度，內部容器就會自行（雙向）捲動、頁尾維持可見，外層不會多出第二條捲軸：
+
+```vue
+<template>
+  <div class="flex h-screen flex-col">
+    <header class="shrink-0">…</header>
+
+    <!-- 必須加 min-h-0：flex 子項預設 min-height: auto，不加會被內容撐開 -->
+    <DataTable class="min-h-0 flex-1" fixed-header :headers="headers" :items="items"
+      scroll-region-label="商品清單" show-scroll-hint locale="zh-TW" />
+  </div>
+</template>
+```
+
+不使用 Tailwind 時：`.page { display: flex; flex-direction: column; height: 100vh }`、`.table { flex: 1 1 auto; min-height: 0 }`。容器仍保有 `min-height: 180px`；未限制高度時排版與先前完全相同。
 
 ## API 文件
 

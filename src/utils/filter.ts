@@ -19,7 +19,7 @@ export function isCustomFilterOption(option: FilterOption): option is CustomFilt
     return typeof option.comparison === 'function'
 }
 
-export function isNumeric(value: any): value is number {
+export function isNumeric(value: unknown): value is number {
     return typeof value === 'number' && !isNaN(value)
 }
 
@@ -37,8 +37,10 @@ export const createFilter = {
         return { field, comparison: 'in', criteria }
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 公開 API：criteria 型別由使用者決定
     custom<T = any>(
         field: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 公開 API：欄位值型別由使用者決定
         comparison: (value: any, criteria: T) => boolean,
         criteria: T
     ): CustomFilterOption {

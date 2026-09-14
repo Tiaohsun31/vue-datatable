@@ -6,6 +6,9 @@ export interface DataTableSlots {
     'customize-headers': void;  // 自定義整個表頭區域
     'loading': void;           // 自定義加載狀態
     'empty-message': void;     // 自定義空數據提示
+    'scroll-hint': {           // 水平溢出提示列內容（showScrollHint 且溢出時渲染）
+        hasHorizontalOverflow: boolean;
+    };
 
     // 表頭相關
     'header': { header: Header; index: number; sortable: boolean };  // 通用表頭單元格

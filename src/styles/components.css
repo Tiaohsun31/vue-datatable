@@ -5,13 +5,33 @@
    - 本檔含三段橋接 utility（交替列 / hover）、固定列陰影、scrollbar 樣式（原 tailwind.utilities.css）。 */
 
 /* ===== 容器結構 ===== */
+/* 直向 flex：未限制高度時排版與 block 相同；放進固定高度的 flex 版面
+   （使用端傳 class="min-h-0 flex-1"）時，容器吃掉剩餘高度並自行捲動，不會撐出外層捲軸。 */
 .vdt-table-wrapper {
     position: relative;
     width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.vdt-scroll-hint,
+.vdt-footer-section {
+    flex-shrink: 0;
+}
+
+.vdt-scroll-hint {
+    padding: var(--vdt-space-1_5) var(--vdt-space-3);
+    font-size: var(--vdt-text-xs);
+    line-height: var(--vdt-leading-sm);
+    color: var(--color-vdt-content-secondary);
+    background-color: var(--color-vdt-surface-secondary);
+    border: 1px solid var(--color-vdt-outline);
+    border-bottom: 0;
 }
 
 .vdt-table-container {
     position: relative;
+    flex: 1 1 auto;
     overflow: auto;
     min-height: 180px;
     border: 1px solid var(--color-vdt-outline);
@@ -646,8 +666,8 @@
     box-shadow: none;
 }
 
-/* 當表格滾動時顯示陰影 */
-.vdt-table-container.show-shadow .fixed-left-shadow::after {
+/* 左側有被捲走的內容時顯示（scrollLeft > 0） */
+.vdt-table-container--shadow-left .fixed-left-shadow::after {
     box-shadow: inset 6px 0 5px -3px rgba(0, 0, 0, 0.2);
 }
 
@@ -663,8 +683,16 @@
     box-shadow: none;
 }
 
-.vdt-table-container.show-shadow .fixed-right-shadow::after {
+/* 右側還有未顯示的內容時顯示（scrollLeft + clientWidth < scrollWidth） */
+.vdt-table-container--shadow-right .fixed-right-shadow::after {
     box-shadow: inset -6px 0 5px -3px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== 捲動區域鍵盤焦點 =====
+   scrollRegionLabel 且溢出時容器可聚焦；內縮外框避免被外層 overflow 裁切 */
+.vdt-table-container:focus-visible {
+    outline: 2px solid var(--color-vdt-primary);
+    outline-offset: -2px;
 }
 
 /* ===== Scrollbar 樣式 ===== */

@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.1.0] - 2026-09-14
+
+水平溢出偵測與可及性。**全部 opt-in，無破壞性變更**：未傳新 props 時，除了下列「右側固定欄陰影」修正之外，外觀與行為不變。
+
+### Features
+
+- **水平溢出偵測**：以 `ResizeObserver` 同時觀察 `.vdt-table-container` 與 `<table>`（表格內容變寬時容器尺寸不一定會變），判斷 `scrollWidth - clientWidth > 1`；items / headers / 分頁變動後於 `nextTick` 重量。SSR 不執行量測，沒有 `ResizeObserver` 的環境退回 `window` resize。
+  - 元件實例公開唯讀 **`hasHorizontalOverflow`**（`defineExpose`）。
+  - 狀態改變時 emit **`update:hasHorizontalOverflow`**（以 `@update:has-horizontal-overflow` 監聽；沒有對應 prop，請勿用 `v-model`）。
+- **`scrollRegionLabel` prop**：有傳入且溢出時，容器加上 `tabindex="0"`、`role="region"`、`aria-label`；未溢出時不加，避免多餘的 Tab 停留點。聚焦後使用**瀏覽器原生**方向鍵捲動（Chromium 實測足夠，元件不攔截按鍵，表格內輸入框與可排序表頭的鍵盤操作不受影響）。新增 `:focus-visible` 外框（`--color-vdt-primary`）。
+- **`showScrollHint` prop**（預設 `false`）：溢出時在表格上方顯示 `.vdt-scroll-hint` 提示列，並以 `aria-describedby` 連到容器。
+- **`scroll-hint` slot**（slot props：`{ hasHorizontalOverflow }`）完全自訂提示內容；`DataTableSlots` 型別同步更新。
+- **i18n**：`DataTableLocale` 新增選填 `horizontalScrollHint`，三個內建語系皆已提供，可用 `localeOverrides` 覆寫；自訂語系未提供時退回 `en` 字串（選填以維持既有型別相容）。
+- **版面**：`.vdt-table-wrapper` 改為直向 flex。放進固定高度 flex 版面（使用端傳 `class="min-h-0 flex-1"`）時，內部容器吃掉剩餘高度並自行捲動，不再把外層撐出第二條捲軸；未限制高度時排版與先前相同（1280px / 768px 量測一致）。README 補「放在固定高度 flex 版面中」範例。
+- 新增 class hook：`.vdt-scroll-hint`、`.vdt-table-container--shadow-left`、`.vdt-table-container--shadow-right`。
+
+### Bug Fixes
+
+- **右側固定欄陰影時機錯誤**：原本左右共用 `scrollLeft > 0` 一個旗標，導致右側固定欄在「右邊還有內容」的初始位置沒有陰影、捲到最右邊（已無隱藏內容）時反而出現。改為左右分開計算：左側 `scrollLeft > 0`、右側 `scrollLeft + clientWidth < scrollWidth - 1`，且在 resize 時也重算（原本只在 scroll 時算）。
+  - 相容：`.show-shadow` / `.vdt-table-container--shadow` 仍保留「已離開最左側」語義；若曾自行以 `.show-shadow .fixed-right-shadow` 覆寫右側陰影，請改用 `.vdt-table-container--shadow-right`。
+- 修復 `eslint.config.js` 最後一段規則未包在 `rules` 內，導致 `pnpm lint` 直接拋出設定錯誤；並清掉因此長期未被檢出的 lint 錯誤（未使用的 import / 變數、`Loading` 元件命名）。公開型別中刻意保留的 `any`（`Item`、filter 選項）以註解標示，**型別不變**。
+
 ## [3.0.3] - 2026-08-13
 
 ### Bug Fixes

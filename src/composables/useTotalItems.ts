@@ -121,6 +121,7 @@ export default function useTotalItems(options: UseTotalItemsOptions) {
     })
 
     // 排序邏輯
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 排序欄位值可為任意型別（字串、數字、日期…）
     const compareValues = (a: any, b: any, isDesc: boolean): number => {
         if (a === b) return 0;
         if (a === null || a === undefined) return 1;

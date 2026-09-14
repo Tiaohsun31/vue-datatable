@@ -5,6 +5,10 @@
     </div>
 </template>
 
+<script setup lang="ts">
+defineOptions({ name: 'VdtLoading' })
+</script>
+
 <style scoped>
 .vdt-loading {
     display: inline-flex;

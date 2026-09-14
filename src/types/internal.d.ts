@@ -35,6 +35,8 @@ export type DataTableEmits = {
     updatePageItems: [items: Item[]];
     updateTotalItems: [items: Item[]];
     selectAll: [];
+    /** 容器水平溢出狀態改變時觸發（唯讀狀態，請用 @update:has-horizontal-overflow 監聽） */
+    'update:hasHorizontalOverflow': [value: boolean];
 };
 
 // 事件名稱（由 payload 映射衍生，避免漂移）

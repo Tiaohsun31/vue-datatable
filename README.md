@@ -159,6 +159,46 @@ In addition to the original [Props](https://hc200ok.github.io/vue3-easy-data-tab
 | clickRowToSelect | false        | boolean                                                               | false       | Click a row to select the item.                                                                                          |
 | disabledRows     | false        | BodyRowDisabledFunction = (item: Item, rowNumber?: number) => boolean | —           | Disable specific rows from being selected.                                                                               |
 | expandTransition | false        | boolean                                                               | true        | If an expand column is set, the expand-row transition is enabled by default.                                             |
+| scrollRegionLabel | false       | string                                                                | —           | _3.1.0._ Accessible name of the scroll container. When set **and** the table overflows horizontally, the container gets `tabindex="0"`, `role="region"` and `aria-label`. |
+| showScrollHint   | false        | boolean                                                               | false       | _3.1.0._ Show a hint bar above the table while it overflows horizontally (`locale.horizontalScrollHint` or the `scroll-hint` slot). |
+
+## Horizontal Overflow & Accessibility
+
+_Since 3.1.0, all opt-in._ The table measures whether its content is wider than the container (`scrollWidth - clientWidth > 1`) with a `ResizeObserver` on both the container and the `<table>`, and re-measures after items / headers / page changes. Without `ResizeObserver` (or during SSR) it degrades safely.
+
+```vue
+<DataTable
+  ref="table"
+  :headers="headers"
+  :items="items"
+  scroll-region-label="Products"
+  show-scroll-hint
+  @update:has-horizontal-overflow="(value) => (overflowing = value)"
+/>
+```
+
+- **`scrollRegionLabel`** — while overflowing, `.vdt-table-container` becomes a focusable, labelled `role="region"`, so keyboard users can Tab to it and scroll with the arrow keys. When the table fits, no `tabindex` is added (no useless Tab stop). A `:focus-visible` outline uses `--color-vdt-primary`.
+- **`showScrollHint`** — renders `.vdt-scroll-hint` above the table while overflowing, linked to the container via `aria-describedby`. Override the text with `localeOverrides.horizontalScrollHint`, or replace it with the [`scroll-hint`](./docs/api/slot.md#scroll-hint) slot.
+- **`hasHorizontalOverflow`** — read-only, exposed on the component instance (`table.value.hasHorizontalOverflow`). Changes are also emitted as `update:hasHorizontalOverflow`; listen with `@update:has-horizontal-overflow` (there is no matching prop, so don't use `v-model`).
+- **Fixed-column shadows** — the shadow of a right-fixed column now appears while there is hidden content on the right; a left-fixed column's shadow appears once scrolled away from the start. Both are recomputed on scroll and on resize. New hooks: `.vdt-table-container--shadow-left` / `--shadow-right`.
+
+### In a fixed-height flex layout
+
+The root `.vdt-table-wrapper` is a column flex container. Give the table the remaining height of a flex column and the container scrolls internally (both directions) while the footer stays visible — no second scrollbar on the page:
+
+```vue
+<template>
+  <div class="flex h-screen flex-col">
+    <header class="shrink-0">…</header>
+
+    <!-- min-h-0 is required: flex items default to min-height: auto -->
+    <DataTable class="min-h-0 flex-1" fixed-header :headers="headers" :items="items"
+      scroll-region-label="Products" show-scroll-hint />
+  </div>
+</template>
+```
+
+Without Tailwind: `.page { display: flex; flex-direction: column; height: 100vh }` and `.table { flex: 1 1 auto; min-height: 0 }`. The container keeps its `min-height: 180px`. When the table's height is not constrained, it lays out exactly as before.
 
 ## API Documentation
 
