@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { nextTick } from 'vue';
+import { defineComponent, h, nextTick } from 'vue';
 import DataTable from '../core/DataTable.vue';
 import { getHorizontalScrollState } from '../composables/useHorizontalScroll';
 
@@ -198,11 +198,24 @@ describe('DataTable scroll hint', () => {
         expect(children.indexOf(hint.element)).toBeLessThan(children.indexOf(container.element));
     });
 
-    it('generates distinct hint ids per instance', async () => {
-        const first = await mountWithMetrics(OVERFLOW, { showScrollHint: true });
-        const second = await mountWithMetrics(OVERFLOW, { showScrollHint: true });
-        expect(first.wrapper.get('.vdt-scroll-hint').attributes('id'))
-            .not.toBe(second.wrapper.get('.vdt-scroll-hint').attributes('id'));
+    it('generates distinct hint ids for tables in the same app (useId)', async () => {
+        // useId 保證的是同一 app 內唯一，因此兩個表格掛在同一個 app 下測試
+        const wrapper = mount(defineComponent({
+            render: () => h('div', [
+                h(DataTable, { headers, items, showScrollHint: true }),
+                h(DataTable, { headers, items, showScrollHint: true }),
+            ]),
+        }));
+        wrapper.findAll('.vdt-table-container').forEach((container) => stubMetrics(container.element as HTMLElement, OVERFLOW));
+        await triggerResize();
+
+        const hints = wrapper.findAll('.vdt-scroll-hint');
+        const ids = hints.map((hint) => hint.attributes('id'));
+        expect(ids).toHaveLength(2);
+        ids.forEach((hintId) => expect(hintId).toMatch(/^vdt-scroll-hint-\S+$/));
+        expect(ids[0]).not.toBe(ids[1]);
+        wrapper.findAll('.vdt-table-container').forEach((container, index) =>
+            expect(container.attributes('aria-describedby')).toBe(ids[index]));
     });
 
     it('uses the built-in locale string', async () => {

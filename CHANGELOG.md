@@ -2,7 +2,11 @@
 
 ## [3.1.0] - 2026-09-14
 
-水平溢出偵測與可及性。**全部 opt-in，無破壞性變更**：未傳新 props 時，除了下列「右側固定欄陰影」修正之外，外觀與行為不變。
+水平溢出偵測與可及性。**新 API 全部 opt-in**：未傳新 props 時，除了下列「右側固定欄陰影」修正之外，外觀與行為不變。唯一的相容性要求是 `vue` 需 ≥ 3.5（見 Peer Dependencies）。
+
+### Peer Dependencies
+
+- `vue` peerDependency 由 `^3.4.0` 提升為 **`^3.5.0`**：提示列 id 改用 Vue 3.5 的 `useId()`（SSR 與 hydration 一致）。Vue 3.5 已發布超過兩年；仍使用 3.4 的專案請先升級 Vue。同一頁面掛載多個 Vue app 時，請以 `app.config.idPrefix` 區分各 app 的 id。
 
 ### Features
 

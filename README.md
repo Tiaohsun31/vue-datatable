@@ -51,7 +51,7 @@ See the [CHANGELOG](CHANGELOG.md) for the full v3 migration notes.
 
 ## Usage Suggestions
 
-1. It is recommended to use Vue 3 and TailwindCSS 4 or later.
+1. Vue 3.5 or later is required (since v3.1.0). If your project uses Tailwind, TailwindCSS 4 or later is recommended.
 2. For older versions, please note the following:
    - Check spacing and alignment for potential issues.
    - Some new features may not be available.

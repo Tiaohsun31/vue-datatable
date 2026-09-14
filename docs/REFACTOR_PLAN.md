@@ -96,7 +96,7 @@
 **其他取捨**
 - `DataTableLocale.horizontalScrollHint` 設為選填：設必填會讓自行建立完整 `DataTableLocale` 物件的使用端在升級後型別檢查失敗（型別層破壞性變更）。
 - `.vdt-table-wrapper` 改直向 flex：才能在固定高度 flex 版面中讓容器吃剩餘高度並自行捲動。未限制高度時與 block 排版結果相同（playground 於 1280px / 768px 量測 wrapper / container / footer 尺寸一致）。
-- 提示列 id 以模組層計數器產生（不用 `useId`，維持 `vue ^3.4` peer）；只在掛載後溢出時渲染，SSR 無 hydration 不一致。
+- 提示列 id 使用 Vue 3.5 的 `useId()`（同一 app 內唯一、SSR 與 hydration 一致），並因此將 `vue` peer 由 `^3.4.0` 提升至 `^3.5.0`：3.5 已發布超過兩年，實際使用端 eShop 為 3.5.39。最初曾用模組層計數器以維持 3.4 相容，但計數器在 SSR 與 client 會各自累加，只能靠「掛載後才渲染」迴避不一致，`useId` 是正解。注意：同一頁面掛載多個 Vue app 時，`useId` 只保證 app 內唯一，需以 `app.config.idPrefix` 區分。
 
 ---
 

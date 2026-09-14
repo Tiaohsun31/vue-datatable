@@ -129,14 +129,9 @@
     </div>
 </template>
 
-<script lang="ts">
-// 模組層計數器：產生各實例唯一的提示列 id（不用 useId 以維持 vue ^3.4 peer 相容）
-let scrollHintIdCounter = 0;
-</script>
-
 <script setup lang="ts">
 import {
-    useSlots, computed, toRef, toRefs, ref, watch, provide, type Slot
+    useSlots, useId, computed, toRef, toRefs, ref, watch, provide, type Slot
 } from 'vue';
 
 import Loading from '../components/loadings/Loading.vue';
@@ -530,8 +525,8 @@ const {
     onOverflowChange: (value) => emits('update:hasHorizontalOverflow', value),
 });
 
-// 提示列 id 在 setup 產生、只在掛載後溢出時才渲染，SSR 不會有 hydration 不一致
-const scrollHintId = `vdt-scroll-hint-${++scrollHintIdCounter}`;
+// useId（Vue 3.5+）：同一 app 內唯一，且 SSR 與 hydration 產生相同 id
+const scrollHintId = `vdt-scroll-hint-${useId()}`;
 const isScrollHintVisible = computed(() => props.showScrollHint && hasHorizontalOverflow.value);
 
 // 只在真的可捲動時才成為可聚焦的 region，避免多一個沒用的 Tab 停留點

@@ -53,7 +53,7 @@
 
 ## Usage suggestions
 
-1. 建議使用 Vue 3、Tailwind CSS 4 或以上版本
+1. 需要 Vue 3.5 以上（v3.1.0 起）；若專案使用 Tailwind，建議 Tailwind CSS 4 以上版本
 2. 如果使用較舊版本，請注意以下幾點：
    - 檢查間距和對齊是否正確
    - 某些新特性可能不可用
